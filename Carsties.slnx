@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="note.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="AuctionService/AuctionService.csproj" />
+  </Folder>
+</Solution>
