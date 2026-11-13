@@ -4,6 +4,7 @@ using AuctionService.Entities;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace AuctionService.Controllers
 {
@@ -12,9 +13,22 @@ namespace AuctionService.Controllers
     public class AuctionsController(AuctionDbContext context) : ControllerBase
     {
         [HttpGet]
-        public async Task<ActionResult<List<AuctionDto>>> GetAunctions()
+        public async Task<ActionResult<List<AuctionDto>>> GetAuctions(string? date)
         {
-            var auctions = await context.Auctions
+            var query = context.Auctions.AsQueryable();
+            if (!string.IsNullOrEmpty(date))
+            {
+                if (!DateTime.TryParse(date, CultureInfo.InvariantCulture,
+                    DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
+                    out var parsedDate))
+                {
+                    return BadRequest("Invalid date");
+                }
+
+                query = query.Where(x => x.UpdatedAt > parsedDate);
+            }
+
+            var auctions = await query
                 .OrderBy(x => x.Item.Make)
                 .ThenBy(x => x.Item.Model)
                 .ProjectToType<AuctionDto>()
@@ -48,8 +62,8 @@ namespace AuctionService.Controllers
             context.Auctions.Add(auction);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAuction), 
-                new { id = auction.Id }, 
+            return CreatedAtAction(nameof(GetAuction),
+                new { id = auction.Id },
                 auction.Adapt<AuctionDto>());
         }
 
@@ -77,6 +91,7 @@ namespace AuctionService.Controllers
 
             // TODO: Check seller is the same as the current user
 
+            auction.UpdatedAt = DateTime.UtcNow;
             updateAuctionDto.Adapt(auction.Item);
 
             await context.SaveChangesAsync();

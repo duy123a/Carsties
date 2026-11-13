@@ -15,7 +15,7 @@ namespace AuctionService.Errors
                 Title = "An unexpected error occured",
                 Detail = httpContext.RequestServices.GetRequiredService<IHostEnvironment>()
                     .IsDevelopment()
-                    ? exception.Message 
+                    ? exception.Message
                     : null
             };
 

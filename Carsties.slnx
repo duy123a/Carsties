@@ -3,6 +3,7 @@
     <File Path="note.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="AuctionService/AuctionService.csproj" />
+    <Project Path="src/AuctionService/AuctionService.csproj" />
+    <Project Path="src/SearchService/SearchService.csproj" />
   </Folder>
 </Solution>

@@ -1,8 +1,6 @@
-﻿using AuctionService.Entities;
-
-namespace AuctionService.DTOs
+﻿namespace SearchService.Models
 {
-    public class AuctionDto
+    public class Item
     {
         public required string Id { get; set; }
         public int ReservePrice { get; set; }
