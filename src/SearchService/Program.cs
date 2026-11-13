@@ -15,7 +15,7 @@ builder.Services.AddSingleton(sp =>
         config["Meilisearch:ApiKey"]);
 });
 builder.Services.AddHttpClient<AuctionSvcHttpClient>()
-    .AddStandardResilienceHandler(options => 
+    .AddStandardResilienceHandler(options =>
     {
         options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(3);
         options.Retry.MaxRetryAttempts = 5;

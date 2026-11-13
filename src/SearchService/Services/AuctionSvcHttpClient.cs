@@ -3,8 +3,8 @@ using SearchService.Models;
 
 namespace SearchService.Services
 {
-    public class AuctionSvcHttpClient(HttpClient httpClient, 
-        IConfiguration config, 
+    public class AuctionSvcHttpClient(HttpClient httpClient,
+        IConfiguration config,
         MeilisearchClient client)
     {
         public async Task<List<Item>> GetItemsForSearch()
