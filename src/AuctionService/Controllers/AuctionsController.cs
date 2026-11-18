@@ -1,16 +1,18 @@
 ﻿using AuctionService.Data;
 using AuctionService.DTOs;
 using AuctionService.Entities;
+using Contracts;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using Wolverine.EntityFrameworkCore;
 
 namespace AuctionService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")] // http://localhost:7001/api/auctions
-    public class AuctionsController(AuctionDbContext context) : ControllerBase
+    public class AuctionsController(AuctionDbContext context, IDbContextOutbox<AuctionDbContext> outbox) : ControllerBase
     {
         [HttpGet]
         public async Task<ActionResult<List<AuctionDto>>> GetAuctions(string? date)
@@ -60,11 +62,15 @@ namespace AuctionService.Controllers
             auction.Seller = "TODO: seller";
 
             context.Auctions.Add(auction);
-            await context.SaveChangesAsync();
+
+            var newAuction = auction.Adapt<AuctionDto>();
+
+            await outbox.PublishAsync(newAuction.Adapt<AuctionCreated>());
+            await outbox.SaveChangesAndFlushMessagesAsync();
 
             return CreatedAtAction(nameof(GetAuction),
                 new { id = auction.Id },
-                auction.Adapt<AuctionDto>());
+                newAuction);
         }
 
         [HttpPut("{id}")]
@@ -94,7 +100,11 @@ namespace AuctionService.Controllers
             auction.UpdatedAt = DateTime.UtcNow;
             updateAuctionDto.Adapt(auction.Item);
 
-            await context.SaveChangesAsync();
+            var auctionUpdated = updateAuctionDto.Adapt<AuctionUpdated>();
+            auctionUpdated.Id = id;
+
+            await outbox.PublishAsync(auctionUpdated);
+            await outbox.SaveChangesAndFlushMessagesAsync();
 
             return NoContent();
         }
@@ -117,7 +127,11 @@ namespace AuctionService.Controllers
             // TODO: Check seller is the same as current user
 
             context.Auctions.Remove(auction);
-            await context.SaveChangesAsync();
+
+            var auctionDelete = new AuctionDeleted { Id = id };
+
+            await outbox.PublishAsync(auctionDelete);
+            await outbox.SaveChangesAndFlushMessagesAsync();
 
             return NoContent();
         }
