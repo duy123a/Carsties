@@ -3,6 +3,7 @@ using AuctionService.DTOs;
 using AuctionService.Entities;
 using Contracts;
 using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -54,12 +55,13 @@ namespace AuctionService.Controllers
             return auction;
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<AuctionDto>> CreateAuction(CreateAuctionDto createAuctionDto)
         {
             var auction = createAuctionDto.Adapt<Auction>();
 
-            auction.Seller = "TODO: seller";
+            auction.Seller = User.Identity?.Name ?? throw new Exception("User has not been authorized");
 
             context.Auctions.Add(auction);
 
@@ -73,6 +75,7 @@ namespace AuctionService.Controllers
                 newAuction);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAuction(string id, UpdateAuctionDto updateAuctionDto)
         {
@@ -95,7 +98,10 @@ namespace AuctionService.Controllers
                 return BadRequest("Cannot update the auction that has bids");
             }
 
-            // TODO: Check seller is the same as the current user
+            if (auction.Seller != User.Identity?.Name)
+            {
+                return Forbid();
+            }
 
             auction.UpdatedAt = DateTime.UtcNow;
             updateAuctionDto.Adapt(auction.Item);
@@ -109,6 +115,7 @@ namespace AuctionService.Controllers
             return NoContent();
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAuction(string id)
         {
@@ -124,7 +131,10 @@ namespace AuctionService.Controllers
                 return BadRequest("Cannot delete auction that has bids");
             }
 
-            // TODO: Check seller is the same as current user
+            if (auction.Seller != User.Identity?.Name)
+            {
+                return Forbid();
+            }
 
             context.Auctions.Remove(auction);
 
@@ -134,6 +144,15 @@ namespace AuctionService.Controllers
             await outbox.SaveChangesAndFlushMessagesAsync();
 
             return NoContent();
+        }
+
+        [Authorize]
+        [HttpPost("test")]
+        public ActionResult<string> AuthTest()
+        {
+            var name = User.Identity?.Name;
+
+            return Ok($"{name} has been authenticated");
         }
     }
 }
